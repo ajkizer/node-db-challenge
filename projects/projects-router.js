@@ -25,6 +25,20 @@ router.get("/", (req, res) => {
     });
 });
 
+router.get("/:id", (req, res) => {
+  Projects.findById(req.params.id)
+    .then(async projectById => {
+      let project = projectById;
+      const tasks = await Projects.getTasks(project.id);
+      const resources = await Projects.getResourcesOfProject(project.id);
+      project = { ...project, tasks, resources };
+      res.json(project);
+    })
+    .catch(err => {
+      res.status(500).json({ message: "failed to get projects" });
+    });
+});
+
 // add a project
 router.post("/", (req, res) => {
   Projects.addProject(req.body)
@@ -40,7 +54,14 @@ router.post("/", (req, res) => {
 router.get("/:id/tasks", validateProjectId, (req, res) => {
   Projects.getTasks(req.params.id)
     .then(tasks => {
-      res.json(tasks);
+      let convertedTasks = tasks.map(task => {
+        if (task.is_complete) {
+          return { ...task, is_complete: true };
+        } else {
+          return { ...task, is_complete: false };
+        }
+      });
+      res.json(convertedTasks);
     })
     .catch(err => {
       res.status(500).json({ message: "Failed to get projects." });
