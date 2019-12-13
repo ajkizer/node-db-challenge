@@ -1,79 +1,83 @@
 const express = require("express");
 
-const Projects = require("./projects-model");
+const Projects = require("./project-model.js");
+
+// import middleware
+const validateProjectId = require("../middleware/validateProjectId.js");
 
 const router = express.Router();
 
+// get list of projects
 router.get("/", (req, res) => {
-  Projects.find()
+  Projects.getProjects()
     .then(projects => {
-      res.json(projects);
+      let convertedProjects = projects.map(project => {
+        if (project.is_complete) {
+          return { ...project, is_complete: true };
+        } else {
+          return { ...project, is_complete: false };
+        }
+      });
+      res.json(convertedProjects);
     })
     .catch(err => {
-      res.status(500).json({ message: "failed to get projects" });
+      res.status(500).json({ message: "Failed to get projects." });
     });
 });
 
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-
-  Projects.findById(id)
-    .then(project => {
-      project
-        ? res.json(project)
-        : res.status(404).json({ message: "Could not find project" });
-    })
-    .catch(err => {
-      res.status(500).json({ message: `${err} -- failed to load` });
-    });
-});
-
+// add a project
 router.post("/", (req, res) => {
-  let projectData = req.body;
-
-  if (!projectData.completed) {
-    projectData = { ...projectData, completed: false };
-  }
-
-  Projects.add(projectData)
+  Projects.addProject(req.body)
     .then(project => {
       res.status(201).json(project);
     })
     .catch(err => {
-      res.status(500).json({ message: "Could not add project" });
+      res.status(500).json({ message: "Failed to add project." });
     });
 });
 
-router.delete("/:id", (req, res) => {
-  const { id } = req.params;
-
-  Projects.remove(id)
-    .then(deleted => {
-      deleted
-        ? res.json({ removed: deleted })
-        : res.status(404).json({ message: "Project does not exist" });
+// get tasks from 1 project
+router.get("/:id/tasks", validateProjectId, (req, res) => {
+  Projects.getTasks(req.params.id)
+    .then(tasks => {
+      res.json(tasks);
     })
     .catch(err => {
-      res.status(500).json({ message: "failed to delete project" });
+      res.status(500).json({ message: "Failed to get projects." });
     });
 });
 
-router.put("/:id", (req, res) => {
-  const { id } = req.params;
-  const changes = req.body;
-
-  Projects.findById(id)
-    .then(project => {
-      if (project) {
-        Projects.update(changes, id).then(updatedProject => {
-          res.json(updatedProject);
-        });
-      } else {
-        res.status(404).json({ message: "could not find project" });
-      }
+// post a task to a project
+router.post("/:id/tasks", validateProjectId, (req, res) => {
+  Projects.addTask(req.body, req.params.id)
+    .then(task => {
+      res.status(201).json(task);
     })
     .catch(err => {
-      res.status(500).json({ message: "failed to update" });
+      res.status(500).json({ message: "Failed to add task." });
     });
 });
+
+// get resources from 1 project
+router.get("/:id/resources", validateProjectId, (req, res) => {
+  Projects.getResourcesOfProject(req.params.id)
+    .then(resources => {
+      res.json(resources);
+    })
+    .catch(err => {
+      res.status(500).json({ message: "Failed to get resources." });
+    });
+});
+
+// add resource to a project
+router.post("/:id/resources", validateProjectId, (req, res) => {
+  Projects.addResourceOfProject(req.body, req.params.id)
+    .then(resource => {
+      res.status(201).json(resource);
+    })
+    .catch(err => {
+      res.status(500).json({ message: "Failed to add resource" });
+    });
+});
+
 module.exports = router;

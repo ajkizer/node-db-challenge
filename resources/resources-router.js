@@ -1,42 +1,29 @@
 const express = require("express");
 
-const Resources = require("./resources-model");
+const Resources = require("./resource-model.js");
 
 const router = express.Router();
 
+// get a list of resources
 router.get("/", (req, res) => {
-  Resources.find()
+  Resources.getResource()
     .then(resources => {
       res.json(resources);
     })
     .catch(err => {
-      res.status(500).json({ message: "failed to process request" });
+      res.status(500).json({ message: "Failed to get resources." });
     });
 });
 
-router.get("/:id", (req, res) => {
-  const { id } = req.params;
-
-  Resources.findById(id)
-    .then(resource => {
-      resource
-        ? res.json(resource)
-        : res.status(404).json({ message: "could not find resource" });
-    })
-    .catch(err => {
-      res.status(500).json({ message: "error processing request" });
-    });
-});
-
+// add a resource
 router.post("/", (req, res) => {
-  const resourceData = req.body;
-
-  Resources.add(resourceData)
+  Resources.addResource(req.body)
     .then(resource => {
       res.status(201).json(resource);
     })
     .catch(err => {
-      res.status(500).json({ message: "could not process request" });
+      res.status(500).json({ message: "Failed to add resources." });
     });
 });
+
 module.exports = router;
