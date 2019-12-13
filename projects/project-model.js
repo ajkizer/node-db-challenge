@@ -20,16 +20,6 @@ function findById(id) {
     .first();
 }
 
-function findbyIdWithTasks(id) {
-  return db("projects as p")
-    .where("p.id", id)
-    .join("tasks as t", "p.id", "t.project_id")
-    .select(
-      "p.name as Project Name",
-      "p.descripion as Project Description",
-      "tasks"
-    );
-}
 function getTasks(project_id) {
   return db("projects as p")
     .where("p.id", project_id)
